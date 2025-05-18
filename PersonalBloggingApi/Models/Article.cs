@@ -7,14 +7,16 @@ namespace PersonalBloggingApi.Models
         public int Id { get; set; }
 
         [Required]
-        public string? Title { get; set; }
+        public required string Title { get; set; }
 
         [Required]
-        public string? Body { get; set; }
+        public required string Body { get; set; }
 
         [Required]
-        public string? Author { get; set; }
+        public required string Author { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateOnly CreatedAt { get; set; }
+
+        public DateOnly LastEdited { get; set; }
     }
 }
