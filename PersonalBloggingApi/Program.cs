@@ -7,7 +7,29 @@ var app = builder.Build();
 
 List<Article> articles = new List<Article>{};
 
-app.MapGet("/articles", () => TypedResults.Ok(articles));
+app.MapGet("/articles", Results<BadRequest, Ok<List<Article>>>(DateOnly? before, DateOnly? after) => {
+
+    if(before != null && after != null)
+    {
+        if (before.Value.CompareTo(after.Value) < 0 || after.Value.CompareTo(before.Value) > 0)
+        {
+            return TypedResults.BadRequest();
+        }
+        return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(before) < 0 && article.CreatedAt.CompareTo(after) > 0));
+    }
+
+    if(after != null)
+    {
+        return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(after) > 0));
+    }
+
+    if(before != null)
+    {
+        return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(before) < 0));
+    }
+
+    return TypedResults.Ok(articles);
+    });
 
 app.MapGet("/articles/{id}", Results<Ok<Article>, NotFound> (int id) => 
 {
