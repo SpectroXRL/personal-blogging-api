@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using PersonalBloggingApi.Models;
+using PersonalBloggingApi.Repositories;
 using System.Diagnostics.Metrics;
 
 namespace PersonalBloggingApi.Endpoints
@@ -27,7 +28,7 @@ namespace PersonalBloggingApi.Endpoints
         }
 
         //GetAllArticles
-        static Results<BadRequest, Ok<List<Article>>> GetAllArticles(DateOnly? before, DateOnly? after) 
+        static Results<BadRequest, Ok<List<Article>>> GetAllArticles(IArticlesRepository repo, DateOnly? before, DateOnly? after) 
         {
             if (before != null && after != null)
             {
@@ -38,10 +39,8 @@ namespace PersonalBloggingApi.Endpoints
                 return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(before) < 0 && article.CreatedAt.CompareTo(after) > 0));
             }
 
-            if (after != null)
-            {
-                return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(after) > 0));
-            }
+            return TypedResults.Ok(repo.GetAll(before, after));
+        }
 
             if (before != null)
             {
@@ -52,9 +51,9 @@ namespace PersonalBloggingApi.Endpoints
         }
 
         //GetArticleById
-        static Results<Ok<Article>, NotFound> GetArticleById(int id)
+        static Results<Ok<Article>, NotFound> GetArticleById(IArticlesRepository repo, int id)
         {
-            var article = articles.Find(article => article.Id == id);
+            var article = repo.Get(id);
 
             if (article != null)
             {
@@ -65,24 +64,23 @@ namespace PersonalBloggingApi.Endpoints
         }
 
         //CreateArticle
-        static IResult CreateArticle ([FromBody] Article article) 
+        static IResult CreateArticle (IArticlesRepository repo, [FromBody] Article article) 
         {
-            article.Id = articles.Count != 0 ? articles.Max(article => article.Id) + 1 : 0;
-            article.CreatedAt = article.LastEdited = DateOnly.FromDateTime(DateTime.Now);
-            articles.Add(article);
+            repo.Create(article);
             return TypedResults.CreatedAtRoute(article, "GetArticleById", new { id = article.Id});
         }
 
         //UpdateArticleById
-        static Results<NoContent, NotFound> UpdateArticleById(int id, [FromBody] Article updatedArticle)
+        static Results<NoContent, NotFound> UpdateArticleById(IArticlesRepository repo, int id, [FromBody] Article updatedArticle)
         {
-            Article? existingArticle = articles.Find(article => article.Id == id);
+            Article? existingArticle = repo.Get(id);
             if (existingArticle != null)
             {
                 existingArticle.Title = updatedArticle.Title;
                 existingArticle.Body = updatedArticle.Body;
                 existingArticle.Author = updatedArticle.Author;
                 existingArticle.LastEdited = DateOnly.FromDateTime(DateTime.Now);
+                repo.Update(existingArticle);
                 return TypedResults.NoContent();
             }
             else
@@ -92,12 +90,12 @@ namespace PersonalBloggingApi.Endpoints
         }
 
         //DeleteArticle
-        static Results<NoContent, NotFound> DeleteArticle(int id)
+        static Results<NoContent, NotFound> DeleteArticle(IArticlesRepository repo, int id)
         {
-            Article? article = articles.Find(article => article.Id == id);
+            Article? article = repo.Get(id);
             if (article != null)
             {
-                articles.Remove(article);
+                repo.Delete(id);
                 return TypedResults.NoContent();
             }
             return TypedResults.NotFound();
