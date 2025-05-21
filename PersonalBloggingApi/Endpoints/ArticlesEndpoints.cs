@@ -8,7 +8,6 @@ namespace PersonalBloggingApi.Endpoints
 {
     public static class ArticlesEndpoints
     {
-        static List<Article> articles = new List<Article> { };
         public static void RegisterArticlesEndpoints(this WebApplication app)
         {
             //Endpoint Group
@@ -36,19 +35,12 @@ namespace PersonalBloggingApi.Endpoints
                 {
                     return TypedResults.BadRequest();
                 }
-                return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(before) < 0 && article.CreatedAt.CompareTo(after) > 0));
             }
 
             return TypedResults.Ok(repo.GetAll(before, after));
         }
 
-            if (before != null)
-            {
-                return TypedResults.Ok(articles.FindAll(article => article.CreatedAt.CompareTo(before) < 0));
-            }
-
-            return TypedResults.Ok(articles);
-        }
+    
 
         //GetArticleById
         static Results<Ok<Article>, NotFound> GetArticleById(IArticlesRepository repo, int id)
